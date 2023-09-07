@@ -41,10 +41,12 @@ centerText {
 
 h1 {
   text-align: center;
+    font-family: "Lucida Handwriting", cursive;
 }
 
 h2 {
   text-align: center;
+  font-family: "Lucida Handwriting", cursive;
 }
 
 .imgPreview {

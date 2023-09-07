@@ -11,12 +11,16 @@ import "react-image-lightbox/style.css";
 import CircularProgress from '@mui/material/CircularProgress';
 import toast, { Toaster } from 'react-hot-toast';
 
+import DriveUploady from "drive-uploady";
+import UploadButton from "@rpldy/upload-button";
+
 const GOOGLE_DRIVE_URL_START =
   "https://www.googleapis.com/drive/v2/files?q=%27";
 const GOOGLE_DRIVE_URL_END = "%27+in+parents&key=";
 
 function App() {
   const [images, setImages] = useState([])
+  const [token, setToken] = useState(null)
   const [isLoading, setIsLoading] = useState(true);
 
   const viewerData = {
@@ -25,13 +29,6 @@ function App() {
     name: "name1",
     options: {
       style: { width: 250 },
-      // behavior when image is clicked
-      // if on click is empty (no modal or newWindow)
-      // current tab will show full image
-      // if modal true, image opens as overlay
-      // on current tab
-      // if new window is true, new tab is launched
-      // with image url
       onClick: {
         modal: true,
         newWindow: false
@@ -41,12 +38,23 @@ function App() {
   }
 
   const [openPicker, data, authResponse] = useDrivePicker();
-  const handleOpenPicker = () => {
+  const handleOpenPicker = async () => {
+    console.log(token)
+    if (token === null) {
+      console.log('token is null')
+      await getToken()
+    } else {
+      pickPhotos()
+    }
+  }
+
+  function pickPhotos() {
+    console.log('pick images')
     openPicker({
       clientId: "286847653857-nnj3759or34tdcgiu8adp2ofv7m2rs3g.apps.googleusercontent.com",
       developerKey: "AIzaSyATeY53kvQLMGQD65ajDxKa7Qgo9GNmBrc",
       viewId: "DOCS_IMAGES_AND_VIDEOS",
-      token: "ya29.a0AfB_byA3sHz04WXGaQrbQZjgcApLHM_rgjLkuZHDnp--AIdC_KF1qXw_DUiLvhL6hjUUv_1PfPegmTI4EgYnZZ-ZmYvtVmuszfpHfP89aveuHg5JGE6TuUUgcyU8uDTkBGDX38SW9Fr0WIV2M3mnLas5C8Yi9ZPwBQaCgYKAfsSARASFQHsvYlsijX9m2g0EQwCNrTKDxX3iw0169",
+      token: token.access_token,
       showUploadView: true,
       showUploadFolders: true,
       disableDefaultView: true,
@@ -55,10 +63,7 @@ function App() {
       setParentFolder: "1hA_SxgayS3SE_Gib_dvSbALrqtWGwvA-", // https://drive.google.com/drive/folders/1hA_SxgayS3SE_Gib_dvSbALrqtWGwvA-?usp=drive_link
       locale: "sk",
       callbackFunction: (data) => {
-        console.log(data)
-        if (data.action === 'cancel') {
-          console.log('User clicked cancel/close button')
-        } else if (data.action === 'picked') {
+        if (data.action === 'picked') {
           toast.success('Fotky boli pridané')
           loadData()
         }
@@ -81,14 +86,57 @@ function App() {
             src: item.webContentLink,
             width: item.imageMediaMetadata.width,
             height: item.imageMediaMetadata.height,
-            caption: ''
+            caption: item.ownerNames[0]
           }
         })
+        if (data.size !== 0) {
+          setCurrentImagePreview(data[0].src)
+        }
         setImages(data)
         setIsLoading(false)
-        console.log(data)
       });
   }
+
+  async function getToken() {
+    const tokenClient = window.google.accounts.oauth2.initTokenClient({
+      client_id: "286847653857-nnj3759or34tdcgiu8adp2ofv7m2rs3g.apps.googleusercontent.com",
+      scope: "https://www.googleapis.com/auth/drive.file ",
+      callback: (response) => {
+        setToken(response)
+        console.log('new token')
+        pickPhotos()
+        pickPhotos()
+        return response
+      },
+    });
+
+    tokenClient.requestAccessToken({ prompt: "consent" });
+  };
+
+  // const login = async () => {
+  //   const client = window.google.accounts.oauth2.initTokenClien({
+  //     client_id: "286847653857-nnj3759or34tdcgiu8adp2ofv7m2rs3g.apps.googleusercontent.com",
+  //     scope: "https://www.googleapis.com/auth/drive.file ",
+  //   });
+  //   const tokenResponse = await new Promise((resolve, reject) => {
+  //     try {
+  //       // Settle this promise in the response callback for requestAccessToken()
+  //       client.callback = (resp) => {
+  //         if (resp.error !== undefined) {
+  //           reject(resp);
+  //         }
+
+  //         // console.log("client resp",resp);
+  //         resolve(resp);
+  //       };
+  //       // console.log("client",client);
+  //       client.requestAccessToken({ prompt: "consent" });
+  //     } catch (err) {
+  //       console.log(err);
+  //     }
+  //   });
+  //   return tokenResponse;
+  // };
 
   useEffect(() => {
     loadData();
@@ -97,8 +145,7 @@ function App() {
   const [currentImagePreview, setCurrentImagePreview] = useState(null);
   useEffect(() => {
     const intervalId = setInterval(() => {
-      console.log(images)
-      setCurrentImagePreview(images[Math.floor(Math.random()*images.length)].src);
+      setCurrentImagePreview(images[Math.floor(Math.random() * images.length)].src);
     }, 3000)
 
     return () => clearInterval(intervalId);
@@ -124,7 +171,7 @@ function App() {
       <h1 className='centerText'>Natália & Kamil</h1>
       <h1 className='centerText'>9.9.2023</h1>
       {currentImagePreview &&
-      <div className='centerInner' height="300px">
+        <div className='centerInner' height="300px">
           <img className='imgPreview' src={currentImagePreview} />
         </div>
       }
@@ -133,11 +180,11 @@ function App() {
         <CircularProgress className='item' />
       </div>}
       {images &&
-          <Gallery
-            images={images}
-            onClick={handleImageClick}
-            enableImageSelection={false}
-          />
+        <Gallery
+          images={images}
+          onClick={handleImageClick}
+          enableImageSelection={false}
+        />
       }
       {!!currentImage && (
         <Lightbox
