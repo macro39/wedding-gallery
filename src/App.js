@@ -11,9 +11,6 @@ import "react-image-lightbox/style.css";
 import CircularProgress from '@mui/material/CircularProgress';
 import toast, { Toaster } from 'react-hot-toast';
 
-import DriveUploady from "drive-uploady";
-import UploadButton from "@rpldy/upload-button";
-
 const GOOGLE_DRIVE_URL_START =
   "https://www.googleapis.com/drive/v2/files?q=%27";
 const GOOGLE_DRIVE_URL_END = "%27+in+parents&key=";
@@ -39,13 +36,14 @@ function App() {
 
   const [openPicker, data, authResponse] = useDrivePicker();
   const handleOpenPicker = async () => {
-    console.log(token)
-    if (token === null) {
-      console.log('token is null')
-      await getToken()
-    } else {
-      pickPhotos()
-    }
+    // console.log(token)
+    // if (token === null) {
+    //   console.log('token is null')
+    //   await getToken()
+    // } else {
+    //   pickPhotos()
+    // }
+    pickPhotos()
   }
 
   function pickPhotos() {
@@ -54,7 +52,8 @@ function App() {
       clientId: "286847653857-nnj3759or34tdcgiu8adp2ofv7m2rs3g.apps.googleusercontent.com",
       developerKey: "AIzaSyATeY53kvQLMGQD65ajDxKa7Qgo9GNmBrc",
       viewId: "DOCS_IMAGES_AND_VIDEOS",
-      token: token.access_token,
+      // token: token.access_token,
+      token: token,
       showUploadView: true,
       showUploadFolders: true,
       disableDefaultView: true,
@@ -98,20 +97,16 @@ function App() {
   }
 
   async function getToken() {
-    const tokenClient = window.google.accounts.oauth2.initTokenClient({
-      client_id: "286847653857-nnj3759or34tdcgiu8adp2ofv7m2rs3g.apps.googleusercontent.com",
-      scope: "https://www.googleapis.com/auth/drive.file ",
-      callback: (response) => {
-        setToken(response)
-        console.log('new token')
-        pickPhotos()
-        pickPhotos()
-        return response
-      },
-    });
-
-    tokenClient.requestAccessToken({ prompt: "consent" });
+    await fetch(
+      'https://juicy-exuberant-brow.glitch.me/token'
+    )
+      .then(response => response.json())
+      .then(jsonResp => {
+        console.log(jsonResp)
+        setToken(jsonResp.token)
+      })
   };
+
 
   // const login = async () => {
   //   const client = window.google.accounts.oauth2.initTokenClien({
@@ -138,8 +133,12 @@ function App() {
   //   return tokenResponse;
   // };
 
-  useEffect(() => {
+  useEffect(async () => {
+    getToken()
     loadData();
+    setTimeout(() => {
+      getToken()
+   }, 3000)
   }, []);
 
   const [currentImagePreview, setCurrentImagePreview] = useState(null);
