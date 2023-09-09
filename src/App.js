@@ -52,6 +52,7 @@ function App() {
       clientId: "286847653857-nnj3759or34tdcgiu8adp2ofv7m2rs3g.apps.googleusercontent.com",
       developerKey: "AIzaSyATeY53kvQLMGQD65ajDxKa7Qgo9GNmBrc",
       viewId: "DOCS_IMAGES_AND_VIDEOS",
+      viewMimeTypes: 'image/jpeg,image/png',
       // token: token.access_token,
       token: token,
       showUploadView: true,
